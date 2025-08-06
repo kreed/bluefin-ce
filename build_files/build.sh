@@ -10,7 +10,7 @@ dnf5 install -y gnome-shell-extension-dash-to-panel
 dnf5 remove -y gnome-shell-extension-dash-to-dock gnome-shell-extension-logo-menu
 
 # hide bluefin logo in plymouth
-rm /usr/share/plymouth/themes/spinner/watermark.png
+rm /usr/share/plymouth/themes/spinner/*watermark.png
 
 ### Cleanup
 
