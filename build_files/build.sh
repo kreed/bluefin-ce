@@ -12,6 +12,11 @@ dnf5 remove -y gnome-shell-extension-dash-to-dock gnome-shell-extension-logo-men
 # hide bluefin logo in plymouth
 rm /usr/share/plymouth/themes/spinner/*watermark.png
 
+# rebuild initramfs
+QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(\d+\.\d+\.\d+)' | sed -E 's/kernel-//')"
+/usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
+chmod 0600 "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
+
 ### Cleanup
 
 rm -r /var/lib/dnf
