@@ -2,14 +2,36 @@
 
 set -ouex pipefail
 
-### Install packages
+### Packages
 
-dnf5 install -y neovim git-delta
+INCLUDED_PACKAGES=(
+  git-delta
+  gnome-shell-extension-dash-to-panel
+  neovim
+  )
 
-dnf5 install -y gnome-shell-extension-dash-to-panel
-dnf5 remove -y gnome-shell-extension-dash-to-dock gnome-shell-extension-logo-menu
+EXCLUDED_PACKAGES=(
+  gnome-shell-extension-apps-menu
+  gnome-shell-extension-dash-to-dock
+  gnome-shell-extension-logo-menu
+  gnome-shell-extension-places-menu
+  gnome-shell-extension-window-list
+  )
 
-# hide bluefin logo in plymouth
+dnf5 -y install "${INCLUDED_PACKAGES[@]}"
+
+readarray -t EXCLUDED_PACKAGES < <(rpm -qa --queryformat='%{NAME}\n' "${EXCLUDED_PACKAGES[@]}")
+
+# remove any excluded packages which are still present on image
+if [[ "${#EXCLUDED_PACKAGES[@]}" -gt 0 ]]; then
+    dnf5 -y remove "${EXCLUDED_PACKAGES[@]}"
+else
+    echo "No packages to remove."
+fi
+
+### Plymouth
+
+# remove logo
 rm /usr/share/plymouth/themes/spinner/*watermark.png
 
 # rebuild initramfs
