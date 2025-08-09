@@ -34,11 +34,16 @@ fi
 # remove logo
 rm /usr/share/plymouth/themes/spinner/*watermark.png
 
+dnf5 -y copr enable kreed/kernel-sandbox
+dnf5 -y versionlock delete kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra
+dnf5 -y remove kmod-framework-laptop kmod-openrazer kmod-kvmfr kmod-v4l2loopback
+dnf5 -y update kernel\*
+dnf5 -y copr disable kreed/kernel-sandbox
+
 # rebuild initramfs
 QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(\d+\.\d+\.\d+)' | sed -E 's/kernel-//')"
 /usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
 chmod 0600 "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
 
 ### Cleanup
-
-rm -r /var/lib/dnf
+dnf clean all
