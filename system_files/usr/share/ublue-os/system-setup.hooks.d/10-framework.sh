@@ -49,7 +49,6 @@ if [[ "$VEN_ID" == "Framework" && "$SYS_ID" == "Laptop 13 ("* ]]; then
     if [[ ! -f /etc/modprobe.d/alsa.conf ]]; then
         echo "Applying 3.5mm audio jack fix"
         tee /etc/modprobe.d/alsa.conf <<<"options snd-hda-intel index=1,0 model=auto,dell-headset-multi"
-        echo 0 | tee /sys/module/snd_hda_intel/parameters/power_save
     fi
 
     # Suspend fix for Framework 13 Ryzen 7040
