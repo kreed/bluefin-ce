@@ -29,7 +29,8 @@ else
     echo "No packages to remove."
 fi
 
-dnf5 upgrade -y --enablerepo=updates-testing --refresh --advisory=FEDORA-2025-94b0d1f2b6
+dnf5 -y versionlock delete kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra
+dnf5 -y upgrade --enablerepo=updates-testing --refresh --advisory=FEDORA-2025-94b0d1f2b6
 
 ### Plymouth
 
@@ -43,3 +44,4 @@ chmod 0600 "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
 
 ### Cleanup
 dnf clean all
+rm -r /var/lib/dnf
