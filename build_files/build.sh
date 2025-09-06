@@ -29,6 +29,8 @@ else
     echo "No packages to remove."
 fi
 
+dnf5 upgrade -y --enablerepo=updates-testing --refresh --advisory=FEDORA-2025-94b0d1f2b6
+
 ### Plymouth
 
 # remove logo
