@@ -29,9 +29,6 @@ else
     echo "No packages to remove."
 fi
 
-dnf5 -y versionlock delete kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra
-dnf5 -y upgrade --enablerepo=updates-testing --refresh --advisory=FEDORA-2025-94b0d1f2b6
-
 ### Plymouth
 
 # remove logo
