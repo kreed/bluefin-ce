@@ -29,9 +29,6 @@ else
     echo "No packages to remove."
 fi
 
-# vscode insiders version to get terminal scroll teleport fix https://github.com/microsoft/vscode/issues/224750
-dnf5 -y install https://vscode.download.prss.microsoft.com/dbazure/download/insider/06acd067cb9621b055d9701324477cf75fa0e242/code-insiders-1.104.0-1757067455.el8.x86_64.rpm
-
 ### Plymouth
 
 # remove logo
