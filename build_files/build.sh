@@ -6,6 +6,7 @@ set -ouex pipefail
 
 INCLUDED_PACKAGES=(
   git-delta
+  cosmic-session
   gnome-shell-extension-dash-to-panel
   neovim
   )
