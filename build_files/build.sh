@@ -2,6 +2,17 @@
 
 set -ouex pipefail
 
+### Kernel - update to 6.19.9 from testing repo (MES hang fix)
+dnf5 versionlock delete kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra || true
+dnf5 -y update --enablerepo=updates-testing \
+  kernel \
+  kernel-devel \
+  kernel-devel-matched \
+  kernel-core \
+  kernel-modules \
+  kernel-modules-core \
+  kernel-modules-extra
+
 ### Packages
 
 INCLUDED_PACKAGES=(
