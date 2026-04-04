@@ -58,7 +58,6 @@ rm -rf /var/cache/akmods
 INCLUDED_PACKAGES=(
   git-delta
   gnome-shell-extension-dash-to-panel
-  neovim
   )
 
 EXCLUDED_PACKAGES=(

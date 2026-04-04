@@ -3,7 +3,8 @@
 This builds on top of [bluefin-latest](https://github.com/ublue-os/bluefin) with a handful of personal tweaks:
 
 - Remove the bluefin logo from plymouth
-- Add neovim and git-delta
+- Use latest fedora updates-testing kernel
+- Add git-delta
 - Swap out some gnome shell extensions (drop dash to dock and logo menu, add dash to panel)
 
 More (or maybe less) to come in the future.
