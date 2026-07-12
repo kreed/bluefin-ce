@@ -55,9 +55,14 @@ rm -rf /var/cache/akmods
 
 ### Packages
 
+dnf5 -y copr enable scottames/ghostty
+dnf5 -y copr enable wezfurlong/wezterm-nightly
+
 INCLUDED_PACKAGES=(
+  ghostty
   git-delta
   gnome-shell-extension-dash-to-panel
+  wezterm
   )
 
 EXCLUDED_PACKAGES=(
@@ -69,6 +74,9 @@ EXCLUDED_PACKAGES=(
   )
 
 dnf5 -y install "${INCLUDED_PACKAGES[@]}"
+
+dnf5 -y copr disable scottames/ghostty
+dnf5 -y copr disable wezfurlong/wezterm-nightly
 
 readarray -t EXCLUDED_PACKAGES < <(rpm -qa --queryformat='%{NAME}\n' "${EXCLUDED_PACKAGES[@]}")
 
