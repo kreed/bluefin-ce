@@ -94,6 +94,13 @@ QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(\d+\.\d+\.\d+)' | sed -E 's/kerne
 /usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
 chmod 0600 "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
 
+### Nix
+
+# Empty mountpoint for the Determinate installer's nix.mount; it can't be
+# created at runtime on a composefs (read-only /) system. See
+# https://github.com/DeterminateSystems/nix-installer/issues/1445
+mkdir /nix
+
 ### Cleanup
 dnf clean all
 rm -r /var/lib/dnf
