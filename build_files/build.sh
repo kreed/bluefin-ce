@@ -2,31 +2,6 @@
 
 set -ouex pipefail
 
-### Packages
-
-INCLUDED_PACKAGES=(
-  gnome-shell-extension-dash-to-panel
-  )
-
-EXCLUDED_PACKAGES=(
-  gnome-shell-extension-apps-menu
-  gnome-shell-extension-dash-to-dock
-  gnome-shell-extension-logo-menu
-  gnome-shell-extension-places-menu
-  gnome-shell-extension-window-list
-  )
-
-dnf5 -y install "${INCLUDED_PACKAGES[@]}"
-
-readarray -t EXCLUDED_PACKAGES < <(rpm -qa --queryformat='%{NAME}\n' "${EXCLUDED_PACKAGES[@]}")
-
-# remove any excluded packages which are still present on image
-if [[ "${#EXCLUDED_PACKAGES[@]}" -gt 0 ]]; then
-    dnf5 -y remove "${EXCLUDED_PACKAGES[@]}"
-else
-    echo "No packages to remove."
-fi
-
 ### Plymouth
 
 # remove logo
@@ -46,4 +21,6 @@ mkdir /nix
 
 ### Cleanup
 dnf clean all
-rm -r /var/lib/dnf
+if [ -d /var/lib/dnf ]; then
+    rm -r /var/lib/dnf
+fi
