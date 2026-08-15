@@ -2,6 +2,14 @@
 
 set -ouex pipefail
 
+### Packages
+
+INCLUDED_PACKAGES=(
+  wine
+  )
+
+dnf5 -y install "${INCLUDED_PACKAGES[@]}"
+
 ### Plymouth
 
 # remove logo
