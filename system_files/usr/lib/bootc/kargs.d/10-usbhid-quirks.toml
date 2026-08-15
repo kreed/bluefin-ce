@@ -1,0 +1,1 @@
+kargs = ["usbhid.quirks=0x30c9:0x00e6:0x00000004"]
