@@ -29,9 +29,3 @@ chmod 0600 "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
 # created at runtime on a composefs (read-only /) system. See
 # https://github.com/DeterminateSystems/nix-installer/issues/1445
 mkdir /nix
-
-### Cleanup
-dnf clean all
-if [ -d /var/lib/dnf ]; then
-    rm -r /var/lib/dnf
-fi
