@@ -1,0 +1,40 @@
+[Unit]
+Description=Quad9 DNS over QUIC proxy
+Documentation=https://github.com/AdguardTeam/dnsproxy
+DefaultDependencies=no
+After=systemd-sysusers.service
+Before=systemd-resolved.service nss-lookup.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+ExecStart=/usr/bin/dnsproxy --listen=127.0.0.1 --port=5353 --upstream=quic://dns.quad9.net:853 --bootstrap=9.9.9.9:53 --bootstrap=149.112.112.112:53 --timeout=10s
+Restart=on-failure
+RestartSec=1s
+
+AmbientCapabilities=
+CapabilityBoundingSet=
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+ProtectSystem=strict
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=sysinit.target

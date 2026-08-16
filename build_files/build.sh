@@ -7,11 +7,15 @@ cp -avf "/ctx/system_files"/. /
 
 ### Packages
 
+dnf5 -y copr enable kreed/bluefin-ce
+
 INCLUDED_PACKAGES=(
+  dnsproxy
   wine
   )
 
 dnf5 -y install "${INCLUDED_PACKAGES[@]}"
+dnf5 -y copr disable kreed/bluefin-ce
 
 ### Plymouth
 

@@ -1,0 +1,66 @@
+#!/usr/bin/bash
+
+set -euo pipefail
+
+readonly DROPIN_NAME="60-quad9-doq.conf"
+readonly RUNTIME_DROPIN_DIR="/run/systemd/resolved.conf.d"
+readonly RUNTIME_DROPIN="${RUNTIME_DROPIN_DIR}/${DROPIN_NAME}"
+
+usage() {
+  echo "Usage: quad9-doq {enable|disable|status}"
+}
+
+require_root() {
+  if (( EUID != 0 )); then
+    echo "quad9-doq $1 must be run as root (for example: sudo quad9-doq $1)" >&2
+    exit 1
+  fi
+}
+
+is_bypassed() {
+  [[ -L "${RUNTIME_DROPIN}" && "$(readlink "${RUNTIME_DROPIN}")" == "/dev/null" ]]
+}
+
+case "${1:-}" in
+  enable)
+    require_root enable
+    systemctl start dnsproxy.service
+    if ! systemctl is-active --quiet dnsproxy.service; then
+      echo "dnsproxy failed to start; leaving the current DNS routing unchanged" >&2
+      exit 1
+    fi
+    rm -f "${RUNTIME_DROPIN}"
+    systemctl reload systemd-resolved.service
+    echo "Quad9 DNS over QUIC enabled until manually disabled."
+    ;;
+  disable)
+    require_root disable
+    install -d --mode=0755 "${RUNTIME_DROPIN_DIR}"
+    ln -sfn /dev/null "${RUNTIME_DROPIN}"
+    systemctl reload systemd-resolved.service
+    echo "Quad9 DNS over QUIC bypassed until re-enabled or the next reboot."
+    ;;
+  status)
+    if is_bypassed; then
+      echo "Routing: bypassed (using NetworkManager-provided DNS)"
+    else
+      echo "Routing: enabled (public DNS routed to Quad9 over DoQ)"
+    fi
+
+    if systemctl is-active --quiet dnsproxy.service; then
+      echo "Proxy:   active"
+    else
+      echo "Proxy:   inactive"
+    fi
+
+    if systemctl is-active --quiet systemd-resolved.service; then
+      echo "Resolver: active"
+    else
+      echo "Resolver: inactive"
+    fi
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
