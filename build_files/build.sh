@@ -11,7 +11,6 @@ dnf5 -y copr enable kreed/bluefin-ce
 
 INCLUDED_PACKAGES=(
   dnsproxy
-  wine
   )
 
 dnf5 -y install "${INCLUDED_PACKAGES[@]}"
