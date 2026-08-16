@@ -8,7 +8,7 @@ Summary:        DNS proxy with support for encrypted DNS protocols
 License:        Apache-2.0
 URL:            https://github.com/AdguardTeam/dnsproxy
 Source0:        %{url}/archive/refs/tags/v%{version}/%{name}-%{version}.tar.gz
-# Generated with: go mod vendor; tar -cJf dnsproxy-VERSION-vendor.tar.xz vendor
+# Generated with Fedora's go_vendor_archive tool.
 Source1:        %{name}-%{version}-vendor.tar.xz
 
 BuildRequires:  gcc
@@ -27,7 +27,7 @@ DNS-over-QUIC, and DNSCrypt upstream and downstream connections.
 # Upstream requests the next Go patch release.  Fedora 44 currently carries
 # 1.26.5; patch releases do not change the Go language version, and building
 # with the distro toolchain avoids downloading a compiler during the build.
-sed -i 's/^go 1\.26\.6$/go 1.26.5/' go.mod
+sed -Ei 's/^go 1\.26\.[0-9]+$/go 1.26.5/' go.mod
 
 %build
 export GO111MODULE=on
