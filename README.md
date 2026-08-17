@@ -28,6 +28,10 @@ Public DNS queries are sent to Quad9's threat-blocking service over strict DNS
 over QUIC. Network-specific domains supplied by NetworkManager, such as `lan`
 and VPN search domains, continue to use their per-link resolvers.
 
+The local proxy keeps a bounded 4 MiB DNS cache and coalesces duplicate pending
+queries. This reduces unnecessary upstream traffic and concurrent DoQ streams
+while preserving the TTLs returned by Quad9.
+
 The temporary manual bypass returns public DNS to the active network's
 resolver. It is cleared automatically at reboot:
 
