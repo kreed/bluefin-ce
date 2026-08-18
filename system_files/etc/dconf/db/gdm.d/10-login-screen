@@ -1,0 +1,7 @@
+# GDM login screen: hide the Bluefin logo.
+#
+# Bluefin overwrites /usr/share/pixmaps/fedora-gdm-logo.png with its own logo
+# and points the greeter at it via a gschema override; an empty value here
+# takes precedence and shows no logo at all.
+[org/gnome/login-screen]
+logo=''

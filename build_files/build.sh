@@ -16,6 +16,11 @@ INCLUDED_PACKAGES=(
 dnf5 -y install "${INCLUDED_PACKAGES[@]}"
 dnf5 -y copr disable kreed/bluefin-ce
 
+### dconf
+
+# Compile /etc/dconf/db/*.d/ overrides shipped in system_files/
+dconf update
+
 ### Plymouth
 
 # remove logo
