@@ -11,6 +11,7 @@ dnf5 -y copr enable kreed/bluefin-ce
 
 INCLUDED_PACKAGES=(
   dnsproxy
+  plymouth-plugin-script
   )
 
 dnf5 -y install "${INCLUDED_PACKAGES[@]}"
@@ -23,8 +24,17 @@ dconf update
 
 ### Plymouth
 
-# remove logo
-rm -f /usr/share/plymouth/themes/spinner/*watermark.png
+# Install the framework-penguin theme (tracked as a git submodule) and set it
+# as the default. -R is omitted because the initramfs is rebuilt explicitly below.
+install -d /usr/share/plymouth/themes/framework-penguin
+cp -a /ctx/framework-penguin/. /usr/share/plymouth/themes/framework-penguin/
+rm -rf /usr/share/plymouth/themes/framework-penguin/.git \
+       /usr/share/plymouth/themes/framework-penguin/README.md \
+       /usr/share/plymouth/themes/framework-penguin/penguin-anim.gif
+plymouth-set-default-theme framework-penguin
+
+# Drop the Fedora logo watermark from the stock themes (fallbacks)
+rm -f /usr/share/plymouth/themes/*/watermark.png
 
 # rebuild initramfs
 KERNEL_SUFFIX=""

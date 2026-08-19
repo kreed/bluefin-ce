@@ -2,7 +2,7 @@
 
 This builds on top of [Bluefin](https://github.com/ublue-os/bluefin) with a handful of personal tweaks:
 
-- Remove the bluefin logo from plymouth
+- Replace the plymouth boot theme with [framework-penguin](https://github.com/ygurin/framework-penguin) (tracked as a git submodule)
 - Add an empty /nix mountpoint for the Determinate Nix installer
 - Resolve public DNS through Quad9 using DNS over QUIC
 
