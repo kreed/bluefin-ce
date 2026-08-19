@@ -4,7 +4,7 @@ This builds on top of [Bluefin](https://github.com/ublue-os/bluefin) with a hand
 
 - Remove the bluefin logo from plymouth
 - Add an empty /nix mountpoint for the Determinate Nix installer
-- Resolve public DNS through Quad9 using DNS over QUIC
+- Resolve public DNS through Quad9 using DNS over QUIC (see [DNS.md](DNS.md))
 
 More (or maybe less) to come in the future.
 
@@ -20,23 +20,4 @@ Install Bluefin from [upstream](https://projectbluefin.io/). bluefin-ce currentl
 Then rebase to bluefin-ce:
 ```bash
 sudo bootc switch --enforce-container-sigpolicy ghcr.io/kreed/bluefin-ce:latest
-```
-
-## DNS over QUIC
-
-Public DNS queries are sent to Quad9's threat-blocking service over strict DNS
-over QUIC. Network-specific domains supplied by NetworkManager, such as `lan`
-and VPN search domains, continue to use their per-link resolvers.
-
-The local proxy keeps a bounded 4 MiB DNS cache and coalesces duplicate pending
-queries. This reduces unnecessary upstream traffic and concurrent DoQ streams
-while preserving the TTLs returned by Quad9.
-
-The temporary manual bypass returns public DNS to the active network's
-resolver. It is cleared automatically at reboot:
-
-```bash
-quad9-doq status
-sudo quad9-doq disable
-sudo quad9-doq enable
 ```

@@ -1,0 +1,228 @@
+#!/usr/bin/python3
+"""Manage the Quad9 DNS-over-QUIC resolver and its per-domain ECS carve-outs."""
+
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+# The runtime bypass works by masking the shipped resolved drop-in, so the two
+# must share a filename.  It names the feature, not this tool.
+DROPIN_NAME = "60-quad9-doq.conf"
+RUNTIME_DROPIN_DIR = Path("/run/systemd/resolved.conf.d")
+RUNTIME_DROPIN = RUNTIME_DROPIN_DIR / DROPIN_NAME
+
+# dnsproxy.service reads this with a leading '-', so its absence just leaves the
+# variable empty and contributes no upstream argument at all.  Nothing is
+# shipped: the file exists only while at least one carve-out does.
+ENV_FILE = Path("/etc/dnsproxy/ecs.env")
+ENV_VAR = "ECS_UPSTREAMS"
+ECS_UPSTREAM = "quic://dns11.quad9.net:853"
+
+UPSTREAM_RE = re.compile(r"--upstream=\[/(?P<domain>[^/\]]+)/\]")
+_LABEL = r"(?!-)[A-Za-z0-9-]{1,63}(?<!-)"
+DOMAIN_RE = re.compile(rf"^{_LABEL}(\.{_LABEL})+$")
+
+
+def die(message: str, code: int = 1) -> None:
+    print(message, file=sys.stderr)
+    raise SystemExit(code)
+
+
+def require_root(action: str) -> None:
+    if os.geteuid() != 0:
+        die(f"quad9ctl {action} must be run as root (for example: sudo quad9ctl {action})")
+
+
+def systemctl(*args: str) -> int:
+    return subprocess.run(["systemctl", *args], capture_output=True, text=True).returncode
+
+
+def unit_active(unit: str) -> bool:
+    return systemctl("is-active", "--quiet", unit) == 0
+
+
+def normalise(domain: str) -> str:
+    return domain.strip().rstrip(".").lower()
+
+
+def carveout_domains() -> list[str]:
+    if not ENV_FILE.exists():
+        return []
+    domains: list[str] = []
+    for line in ENV_FILE.read_text().splitlines():
+        line = line.strip()
+        if not line.startswith(f"{ENV_VAR}="):
+            continue
+        domains += [normalise(m.group("domain")) for m in UPSTREAM_RE.finditer(line)]
+    return domains
+
+
+def write_carveouts(domains: list[str]) -> None:
+    """Rewrite the environment file, or remove it when nothing is carved out.
+
+    Replacement is atomic so a failure cannot leave dnsproxy reading a partial
+    line on its next restart.
+    """
+    if not domains:
+        ENV_FILE.unlink(missing_ok=True)
+        try:
+            ENV_FILE.parent.rmdir()
+        except OSError:
+            pass  # still holds other files, or was never created
+        return
+
+    arguments = " ".join(f"--upstream=[/{d}/]{ECS_UPSTREAM}" for d in domains)
+    body = (
+        "# Managed by quad9ctl; change it with 'quad9ctl ecs add|remove'.\n"
+        f"{ENV_VAR}={arguments}\n"
+    )
+
+    ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        "w", dir=ENV_FILE.parent, prefix=".ecs.env.", delete=False
+    ) as handle:
+        handle.write(body)
+        tmp = Path(handle.name)
+    tmp.chmod(0o644)
+    tmp.replace(ENV_FILE)
+
+
+def restart_proxy() -> None:
+    # Upstreams are command-line arguments, so a reload would not pick up edits.
+    systemctl("restart", "dnsproxy.service")
+    if not unit_active("dnsproxy.service"):
+        die("dnsproxy failed to restart; check 'systemctl status dnsproxy.service'")
+    subprocess.run(["resolvectl", "flush-caches"], capture_output=True)
+
+
+def is_bypassed() -> bool:
+    return RUNTIME_DROPIN.is_symlink() and os.readlink(RUNTIME_DROPIN) == "/dev/null"
+
+
+def cmd_enable(_: argparse.Namespace) -> None:
+    require_root("enable")
+    systemctl("start", "dnsproxy.service")
+    if not unit_active("dnsproxy.service"):
+        die("dnsproxy failed to start; leaving the current DNS routing unchanged")
+    RUNTIME_DROPIN.unlink(missing_ok=True)
+    systemctl("reload", "systemd-resolved.service")
+    print("Quad9 DNS over QUIC enabled until manually disabled.")
+
+
+def cmd_disable(_: argparse.Namespace) -> None:
+    require_root("disable")
+    RUNTIME_DROPIN_DIR.mkdir(parents=True, exist_ok=True)
+    RUNTIME_DROPIN.unlink(missing_ok=True)
+    RUNTIME_DROPIN.symlink_to("/dev/null")
+    systemctl("reload", "systemd-resolved.service")
+    print("Quad9 DNS over QUIC bypassed until re-enabled or the next reboot.")
+
+
+def cmd_status(_: argparse.Namespace) -> None:
+    if is_bypassed():
+        print("Routing: bypassed (using NetworkManager-provided DNS)")
+    else:
+        print("Routing: enabled (public DNS routed to Quad9 over DoQ)")
+
+    print(f"Proxy:    {'active' if unit_active('dnsproxy.service') else 'inactive'}")
+    print(f"Resolver: {'active' if unit_active('systemd-resolved.service') else 'inactive'}")
+
+    domains = carveout_domains()
+    if domains:
+        print(f"ECS:      on for {len(domains)} domain(s): {' '.join(domains)}")
+    else:
+        print("ECS:      off for all domains")
+
+
+def cmd_ecs_list(_: argparse.Namespace) -> None:
+    domains = carveout_domains()
+    if not domains:
+        print("No ECS carve-outs configured; every domain uses the ECS-stripped upstream.")
+        return
+    print("Domains resolved through Quad9's ECS-enabled service:")
+    for domain in domains:
+        print(f"  {domain}")
+
+
+def cmd_ecs_add(args: argparse.Namespace) -> None:
+    require_root("ecs add")
+    domain = normalise(args.domain)
+    if not DOMAIN_RE.match(domain):
+        die(f"Not a valid domain name: {args.domain}", 2)
+
+    domains = carveout_domains()
+    if domain in domains:
+        print(f"{domain} already has an ECS carve-out.")
+        return
+
+    write_carveouts(domains + [domain])
+    restart_proxy()
+    print(f"{domain} now resolves through Quad9's ECS-enabled service.")
+
+
+def cmd_ecs_remove(args: argparse.Namespace) -> None:
+    require_root("ecs remove")
+    domain = normalise(args.domain)
+
+    domains = carveout_domains()
+    if domain not in domains:
+        die(f"No ECS carve-out for {domain}.")
+
+    write_carveouts([d for d in domains if d != domain])
+    restart_proxy()
+    print(f"{domain} returned to the ECS-stripped upstream.")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="quad9ctl",
+        description="Manage the Quad9 DNS-over-QUIC resolver and its ECS carve-outs.",
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    sub.add_parser("enable", help="route public DNS through the Quad9 DoQ proxy").set_defaults(
+        func=cmd_enable
+    )
+    sub.add_parser("disable", help="bypass the proxy until the next reboot").set_defaults(
+        func=cmd_disable
+    )
+    sub.add_parser("status", help="show routing, proxy and ECS state").set_defaults(
+        func=cmd_status
+    )
+
+    ecs = sub.add_parser(
+        "ecs",
+        help="manage per-domain EDNS Client Subnet carve-outs",
+        description=(
+            "Send individual domains to Quad9's ECS-enabled service so that "
+            "latency-routed records resolve to a nearby endpoint."
+        ),
+    )
+    ecs_sub = ecs.add_subparsers(dest="ecs_command", required=True)
+
+    ecs_sub.add_parser("list", help="list carved-out domains").set_defaults(func=cmd_ecs_list)
+
+    add = ecs_sub.add_parser("add", help="route a domain through the ECS-enabled service")
+    add.add_argument("domain")
+    add.set_defaults(func=cmd_ecs_add)
+
+    remove = ecs_sub.add_parser("remove", help="return a domain to the ECS-stripped default")
+    remove.add_argument("domain")
+    remove.set_defaults(func=cmd_ecs_remove)
+
+    return parser
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()

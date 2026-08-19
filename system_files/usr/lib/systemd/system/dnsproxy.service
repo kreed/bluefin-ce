@@ -8,9 +8,11 @@ Before=systemd-resolved.service nss-lookup.target
 [Service]
 Type=simple
 DynamicUser=yes
+EnvironmentFile=-/etc/dnsproxy/ecs.env
 ExecStart=/usr/bin/dnsproxy \
     --listen=127.0.0.1 --port=5353 \
     --upstream=quic://dns.quad9.net:853 \
+    $ECS_UPSTREAMS \
     --bootstrap=9.9.9.9:53 --bootstrap=149.112.112.112:53 \
     --timeout=10s \
     --cache --cache-size=4194304 \
