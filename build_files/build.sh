@@ -11,6 +11,7 @@ dnf5 -y copr enable kreed/bluefin-ce
 
 INCLUDED_PACKAGES=(
   dnsproxy
+  kitty-terminfo
   )
 
 dnf5 -y install "${INCLUDED_PACKAGES[@]}"
