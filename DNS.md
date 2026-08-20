@@ -9,7 +9,8 @@ queries. This reduces unnecessary upstream traffic and concurrent DoQ streams
 while preserving the TTLs returned by Quad9.
 
 The temporary manual bypass returns public DNS to the active network's
-resolver. It is cleared automatically at reboot:
+resolver and stops the proxy, cancelling any requests still pending there.
+It is cleared automatically at reboot:
 
 ```bash
 quad9ctl status

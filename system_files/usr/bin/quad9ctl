@@ -120,7 +120,21 @@ def cmd_disable(_: argparse.Namespace) -> None:
     RUNTIME_DROPIN_DIR.mkdir(parents=True, exist_ok=True)
     RUNTIME_DROPIN.unlink(missing_ok=True)
     RUNTIME_DROPIN.symlink_to("/dev/null")
-    systemctl("reload", "systemd-resolved.service")
+    if systemctl("reload", "systemd-resolved.service") != 0:
+        die(
+            "systemd-resolved failed to reload; DNS may still use Quad9. "
+            "Retry 'quad9ctl disable'. The staged bypass applies if "
+            "systemd-resolved restarts before the next reboot."
+        )
+
+    # Reload the resolver before stopping the proxy so there is no interval in
+    # which queries are still routed to a dead local listener.  Stopping the
+    # proxy also cancels requests that were pending when the bypass was applied.
+    if systemctl("stop", "dnsproxy.service") != 0 or unit_active("dnsproxy.service"):
+        die(
+            "DNS routing is bypassed until the next reboot, but dnsproxy failed "
+            "to stop and may continue requests that were already pending."
+        )
     print("Quad9 DNS over QUIC bypassed until re-enabled or the next reboot.")
 
 
