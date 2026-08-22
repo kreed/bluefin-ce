@@ -4,7 +4,9 @@ This builds on top of [Bluefin](https://github.com/ublue-os/bluefin) with a hand
 
 - Remove the bluefin logo from plymouth
 - Add an empty /nix mountpoint for the Determinate Nix installer
-- Resolve public DNS through Quad9 using DNS over QUIC (see [DNS.md](DNS.md))
+- Resolve public DNS through Quad9 using DNS over QUIC, with per-network
+  bypass rules and a GNOME quick-settings toggle (see
+  [quad9ctl](https://github.com/kreed/quad9ctl), installed from its COPR)
 
 More (or maybe less) to come in the future.
 
