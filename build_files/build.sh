@@ -18,6 +18,15 @@ INCLUDED_PACKAGES=(
 dnf5 -y install "${INCLUDED_PACKAGES[@]}"
 dnf5 -y copr disable kreed/quad9ctl
 
+### Captive portal sign-in
+
+test -x /usr/libexec/quad9ctl-portal-helper
+cat > /usr/share/dbus-1/services/org.gnome.Shell.PortalHelper.service <<'EOF'
+[D-BUS Service]
+Name=org.gnome.Shell.PortalHelper
+Exec=/usr/libexec/quad9ctl-portal-helper
+EOF
+
 ### dconf
 
 # Compile /etc/dconf/db/*.d/ overrides shipped in system_files/
