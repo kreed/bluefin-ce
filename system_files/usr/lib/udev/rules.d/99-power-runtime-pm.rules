@@ -1,0 +1,17 @@
+# PCI runtime power management: let idle devices autosuspend rather than stay
+# powered for the life of the boot. The kernel default is "on" — never suspend —
+# for anything a driver has not opted in, which on this hardware pins the NVMe
+# controller, the CNVi WiFi, the integrated sensor hub, DTT, GNA and the SPI
+# controller awake. Every one of them is a "Software Settings in Need of Tuning"
+# line in powertop.
+#
+# Blanket rather than one rule per device: PCI addresses are slot topology, not
+# hardware identity, so an address list would silently stop matching on the next
+# machine. "auto" is only ever permission — it means "suspend when the driver
+# reports idle" — and a driver with no runtime PM support keeps running as it
+# did. Runs at 99 so a device-specific rule earlier in the sequence (60-autosuspend
+# and friends) still wins for the devices it names.
+#
+# Independent of tuned, which owns the profile-switched knobs (governor, EPP,
+# panel power savings) and touches runtime PM in none of its profiles.
+ACTION=="add", SUBSYSTEM=="pci", TEST=="power/control", ATTR{power/control}="auto"
