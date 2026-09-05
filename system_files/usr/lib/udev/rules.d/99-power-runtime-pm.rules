@@ -15,3 +15,6 @@
 # Independent of tuned, which owns the profile-switched knobs (governor, EPP,
 # panel power savings) and touches runtime PM in none of its profiles.
 ACTION=="add", SUBSYSTEM=="pci", TEST=="power/control", ATTR{power/control}="auto"
+
+# Exclude Qualcomm WCN7850 (ath12k), which has issues when using auto.
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x17cb", ATTR{device}=="0x1107", ATTR{power/control}="on"
