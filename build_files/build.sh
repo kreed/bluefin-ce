@@ -13,6 +13,7 @@ INCLUDED_PACKAGES=(
   gnome-shell-extension-quad9
   kitty-terminfo
   quad9ctl
+  xpra
   )
 
 dnf5 -y install "${INCLUDED_PACKAGES[@]}"
