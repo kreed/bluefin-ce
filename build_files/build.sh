@@ -10,14 +10,26 @@ cp -avf "/ctx/system_files"/. /
 dnf5 -y copr enable kreed/quad9ctl
 
 INCLUDED_PACKAGES=(
+  gaze
+  gaze-gnome-extension
+  gaze-gui
   gnome-shell-extension-quad9
   kitty-terminfo
   quad9ctl
   xpra
   )
 
-dnf5 -y install "${INCLUDED_PACKAGES[@]}"
+dnf5 -y --enablerepo=gundulabs install "${INCLUDED_PACKAGES[@]}"
 dnf5 -y copr disable kreed/quad9ctl
+
+### Face authentication
+
+# RPM scriptlets do not enable the daemon in an image build, and upstream
+# tolerates SELinux policy installation failures. Make both explicit here.
+systemctl enable gazed.service
+semodule -i /usr/share/gaze/gaze-gdm-camera.pp
+test -f /etc/pam.d/gdm-face
+test -f /usr/lib64/security/pam_gaze.so
 
 ### Captive portal sign-in
 
@@ -35,7 +47,7 @@ dconf update
 
 ### GNOME Shell extensions
 
-# Enable the Quad9 quick-settings extension by default. The base image sets
+# Enable the Quad9 and Gaze extensions by default. The base image sets
 # its own enabled-extensions default in a gschema override, and overrides
 # replace rather than merge, so append to whichever list currently wins:
 # glib compiles overrides in sorted filename order and the last wins, hence
@@ -46,7 +58,7 @@ python3 - <<'EOF'
 import ast, configparser, glob, os
 
 OWN = "/usr/share/glib-2.0/schemas/zz9-bluefin-ce.gschema.override"
-UUID = "quad9@kreed.github.io"
+UUIDS = ("quad9@kreed.github.io", "gaze@gundulabs.com")
 
 section, extensions = "org.gnome.shell", []
 for path in sorted(glob.glob("/usr/share/glib-2.0/schemas/*.override")):
@@ -62,10 +74,13 @@ for path in sorted(glob.glob("/usr/share/glib-2.0/schemas/*.override")):
                 value = value.removeprefix("@as").strip()
                 section, extensions = candidate, ast.literal_eval(value)
 
-if UUID not in extensions:
-    extensions.append(UUID)
+for uuid in UUIDS:
+    if uuid not in extensions:
+        extensions.append(uuid)
 with open(OWN, "w") as f:
     f.write("[%s]\nenabled-extensions=%r\n" % (section, extensions))
+    # GDM's packaged dconf default remains false; this enables user lock screens.
+    f.write("\n[org.gnome.shell.extensions.gaze]\nenable-face-authentication=true\n")
 EOF
 glib-compile-schemas /usr/share/glib-2.0/schemas
 

@@ -6,6 +6,7 @@ This builds on top of [Bluefin](https://github.com/ublue-os/bluefin) with a hand
 - Add an empty /nix mountpoint for the Determinate Nix installer
 - Resolve public DNS through Quad9 DNS over QUIC, configurable via [quad9ctl](https://github.com/kreed/quad9ctl)
 - Apply some power tunables
+- Include [Gaze](https://github.com/GunduLabs/gaze) face authentication and its GNOME lock-screen extension
 
 More (or maybe less) to come in the future.
 
