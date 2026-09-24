@@ -14,7 +14,9 @@
 #
 # Independent of tuned, which owns the profile-switched knobs (governor, EPP,
 # panel power savings) and touches runtime PM in none of its profiles.
+#
+# Qualcomm WCN7850 (ath12k) is skipped so "auto" is never written for it: it has
+# been observed to reset the machine when runtime-suspended with no driver bound.
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x17cb", ATTR{device}=="0x1107", GOTO="power_runtime_pm_end"
 ACTION=="add", SUBSYSTEM=="pci", TEST=="power/control", ATTR{power/control}="auto"
-
-# Exclude Qualcomm WCN7850 (ath12k), which has issues when using auto.
-ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x17cb", ATTR{device}=="0x1107", ATTR{power/control}="on"
+LABEL="power_runtime_pm_end"
